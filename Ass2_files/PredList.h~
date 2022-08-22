@@ -1,0 +1,19 @@
+// Assignment 2 20T3 COMP2521: Social Network Analysis
+// This program was written by Bejai Cobbing (z5313120)
+
+// PredList.h
+// Header file for PredList.c
+
+#ifndef _PREDLIST_GUARD
+#define _PREDLIST_GUARD
+
+// Creates a new Pred node, returns a pointer to it
+
+
+
+
+
+
+
+
+#endif

@@ -1,0 +1,22 @@
+Define pathsRep struct here as well. Pointer to first head item, numItems 
+keep track of head and insert at beginning. Probably don't even need the rep, do how you did in assignment 1. Need to malloc every node. 
+
+
+
+pathsRep->pred = malloc(sizeof(PredNode *)*g->nV); //TODO: Probably initialise the whole array of linked lists here, use function, 
+    
+    // Initialise all of the linked lists in pred array to null
+    for (int i = 0; i < pathsRep->numNodes; i++) {
+        pathsRep->pred[i]
+    
+    i = 0;
+    while (i < numV) {
+        predArray[i].v = -1; // Double checked lecture slides and tute and yes we do initialise this to -1. 
+        predArray[i].next = NULL;
+        i++;
+    }
+    \
+    
+    
+    in initialisation function initialsise the first node to -1? Yes. Every linked list will have one node that has the value of -1. 
+    Need to malloc the actual linked list. Right now we just have a PredNode pointer that points to NULL. We have malloced the array but not the linked list. 

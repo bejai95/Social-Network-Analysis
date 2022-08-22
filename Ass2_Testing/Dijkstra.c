@@ -1,0 +1,151 @@
+// Assignment 2 20T3 COMP2521: Social Network Analysis
+// This program was written by Bejai Cobbing (z5313120)
+
+// Dijkstra.c
+// This file contains functions relating to Dijkstra 
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "Dijkstra.h"
+#include "Graph.h"
+#include "PQ.h"
+
+#define INT_MAX 2147483647 // Maximum value for an unsigned integer
+
+static PredNode *new_pred_node(Vertex v);
+static PredNode *insert_pred_node(PredNode *L, Vertex v);
+static void free_pred_list(PredNode *L);
+
+// Find all shortest paths from a given source vertex to all other vertices
+ShortestPaths dijkstra(Graph g, Vertex src) {
+    ShortestPaths pathsRep;
+    pathsRep.numNodes = GraphNumVertices(g);
+    pathsRep.src = src;
+    pathsRep.dist = malloc(sizeof(int)*pathsRep.numNodes);
+    pathsRep.pred = malloc(sizeof(PredNode *)*pathsRep.numNodes);
+    PQ pq = PQNew();
+    
+    // Initialise first nodes of the linked lists within pred[] array to NULL
+    // Initialise the dist[] array to INT_MAX
+    // Enqueue all of the vertices to a new pq
+    for (Vertex i = 0; i < pathsRep.numNodes; i++) {
+        pathsRep.pred[i] = NULL;
+        pathsRep.dist[i] = INT_MAX;
+        PQInsert(pq, i, INT_MAX);
+    }
+    
+    // Set the distance from source to itself to 0, and update the source vertex
+    // in the priority queue 
+    pathsRep.dist[src] = 0; 
+    PQInsert(pq, src, 0); 
+    
+    while (!PQIsEmpty(pq)) {
+        Vertex v = PQDequeue(pq);
+        if (pathsRep.dist[v] == INT_MAX) continue;
+        
+        // Find a list of all destination vertices w which are adjacent to v
+        AdjList L = GraphOutIncident(g, v);
+        
+        // Do the edge relaxation for all of the vertices within the list
+        AdjList curr = L; 
+        while (curr != NULL) {
+            Vertex w = curr->v;
+            int total_dist = pathsRep.dist[v] + curr->weight; 
+            
+            // If the total_dist is lower what is stored in the dist array for 
+            // w then update the dist[] array, delete that pred list, create a 
+            // new pred list with v as predecessor and update the pq
+            if (total_dist < pathsRep.dist[w]) {
+                pathsRep.dist[w] = total_dist;
+                free_pred_list(pathsRep.pred[w]);
+                pathsRep.pred[w] = insert_pred_node(NULL, v);  
+                PQInsert(pq, w, total_dist);  
+            }
+            
+            // If the total_dist is equal to what is stored in the dist array
+            // for w then add v as a predecessor
+            else if (total_dist == pathsRep.dist[w]) {
+                pathsRep.pred[w] = insert_pred_node(pathsRep.pred[w], v);
+            }
+            curr = curr->next;
+        }
+    }
+    
+    // If the vertices are still a distance of INT_MAX from source, this means 
+    // they are unreachable from the source and we can set them to zero. 
+    for (Vertex i = 0; i <pathsRep.numNodes; i++) {
+        if (pathsRep.dist[i] == INT_MAX) {
+            pathsRep.dist[i] = 0;
+        }
+    }
+    
+    PQFree(pq);
+    return pathsRep;
+}
+
+// Create a new Pred node, return a pointer to it
+static PredNode *new_pred_node(Vertex v) {
+    PredNode *new = malloc(sizeof(PredNode));
+    assert(new != NULL);
+    new->v = v; 
+    new->next = NULL; 
+    return new;
+}
+
+// Insert a node at the start of the PredList, return the head of updated list
+static PredNode *insert_pred_node(PredNode *L, Vertex v) {
+    PredNode *new = new_pred_node(v);
+    new->next = L; 
+    return new;
+}
+
+// Free all memory associated with the the given PredList
+static void free_pred_list(PredNode *L) {
+    
+    PredNode *curr = L;
+    PredNode *prev = NULL; 
+    while (curr != NULL) {
+        free (prev); 
+        prev = curr;
+        curr = curr->next; 
+    }
+    free(prev); // For the last iteration */
+    return;
+}
+
+// Print out the ShortestPaths structure
+void showShortestPaths(ShortestPaths sps) {
+    printf("numNodes: %d\n", sps.numNodes);
+    printf("src: %d\n", sps.src); 
+    
+    // Print out the vertex, distance and predecessors, each on a new line, e.g.
+    // (Vertex: 1, Distance: 10, Preds: 5, 7)
+    for (Vertex i = 0; i < sps.numNodes; i++) {
+        printf("(Vertex: %d, Distance: %d, Preds: ", i, sps.dist[i]); 
+        PredNode *curr = sps.pred[i];
+        while (curr != NULL) {
+            printf("%d", curr->v);
+            if (curr->next != NULL) { // If not the last Vertex in the list
+                printf(", ");
+            }
+            curr = curr->next;
+        }
+        printf(")\n"); 
+    }
+    return;
+}
+
+// Free all memory associated with the given ShortestPaths structure
+void freeShortestPaths(ShortestPaths sps) {
+    // Free all of the PredList nodes
+    for (Vertex i = 0; i < sps.numNodes; i++) {
+        free_pred_list(sps.pred[i]);
+    }
+    
+    free(sps.dist);
+    free(sps.pred);
+    return;
+}

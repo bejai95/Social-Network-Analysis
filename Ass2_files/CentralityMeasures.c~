@@ -1,0 +1,126 @@
+// Centrality Measures ADT implementation
+// COMP2521 Assignment 2
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "CentralityMeasures.h"
+#include "Dijkstra.h"
+#include "PQ.h"
+#include "Graph.h"
+
+static int find_numShortestPaths(Vertex curr_vertex, int sum, PredNode **pred,
+    Vertex v, int *num__v_paths);
+
+// Find the closeness centrality for each vertex in the given graph and return
+// the results in a NodeValues structure
+NodeValues closenessCentrality(Graph g) {
+	NodeValues nvs;
+	nvs.numNodes = GraphNumVertices(g);
+	nvs.values = malloc(sizeof(double)*nvs.numNodes);
+	
+	// Find the closeness centrality for each vertex in the graph
+	for (Vertex u = 0; u < nvs.numNodes; u++) {
+	    ShortestPaths pathsRep = dijkstra(g, u);
+	    
+	    // Iterate through the dist[] array and find the sum of the length of
+	    // the shortest paths between u and every other node
+	    int n = 0; // The number of nodes u can reach, as defined in spec
+	    int sum_shortest_paths = 0; 
+	    for (Vertex v = 0; v < nvs.numNodes; v++) {
+	        sum_shortest_paths += pathsRep.dist[v]; 
+	        if (pathsRep.dist[v] != 0) {
+	            n++;
+	        }	    
+	    }
+	    n++; // We need to do this because u can reach itself but it has a value
+	         // of 0 in the dist[] array
+	    
+	    // Calculate the closeness centrality for the vertex and put it into the 
+	    // values array
+	    if (n == 1) { // Vertex is isolated; its closeness value should be zero
+	        nvs.values[u] = 0;
+	        continue;
+	    }
+	    double closenessCentrality = ((double)(n - 1) / (nvs.numNodes - 1))
+	        * ((double)(n-1) / (sum_shortest_paths));
+	    nvs.values[u] = closenessCentrality;
+    freeShortestPaths(pathsRep);
+	}
+	return nvs;
+}
+
+NodeValues betweennessCentrality(Graph g) {
+	NodeValues nvs;
+	nvs.numNodes = GraphNumVertices(g);
+	nvs.values = malloc(sizeof(double)*nvs.numNodes);
+	
+	// Find the betweenness centrality for each vertex v in the graph
+	for (Vertex v = 0; v < nvs.numNodes; v++) {
+	    
+	    // Start from every vertex s and find the shortest path to every other 
+	    // vertex t
+	    for (Vertex s = 0; s < nvs.numNodes; s++) {
+	        if (s == v) continue;
+	        ShortestPaths pathsRep = dijkstra(g, s);
+	        
+	        // Loop through all of the possible values of t
+	        for (Vertex t = 0; t < nvs.numNodes; t++) {
+	            if (t == v || t == s) continue;
+	            
+	            // Recursive function
+	            int numShortestPaths = 0; // Total number of shortest paths from s to t
+	            int *num__v_paths_dynamic = malloc(sizeof(int)); // Number of paths that pass through vertex v
+	            numShortestPaths = find_numShortestPaths(t, numShortestPaths,
+	                pathsRep.pred, num__v_paths_dynamic);
+	            int num__v_paths = * num__v_paths_dynamic;
+	            
+	            // Calculate the betweenness centrality fot these values of s and t
+	            // and then add it to the value already stored in the array
+	            double BetweennessCentrality = (double)num__v_paths/numShortestPaths;
+	            nvs.value[v] += BetweennessCentrality;
+	        }
+	        freeShortestPaths(pathsRep);
+	    }
+	}
+	return nvs;
+}
+
+static int find_numShortestPaths(Vertex curr_vertex, int sum, PredNode **pred,
+    Vertex v, int *num__v_paths_dynamic) {
+        
+    // Base Case
+    if (pred[curr_vertex] == NULL) {
+        return 1;
+    }
+    
+    // If curr_vertex is equal to vertex v then increment num__v_paths_dynamic
+    if (curr_vertex = v) {
+        * num__v_paths_dynamic ++;
+    }
+    
+    // Recursively find the lengths of the shortest paths of all of the 
+    // predecessor's of curr_vertex
+    PredNode *curr_pred = pred[curr_vertex]; 
+    while (curr_pred != NULL) {
+        sum += find_numShortestPaths(curr_pred->v, sum, pred, v, num__v_paths);
+        curr_pred = curr_pred->next;
+    }
+    return sum;
+}
+
+NodeValues betweennessCentralityNormalised(Graph g) {
+	NodeValues nvs = {0};
+	return nvs;
+}
+
+void showNodeValues(NodeValues nvs) {
+    for (int i = 0; i < nvs.numNodes; i++) {
+        printf("%d: %lf\n", i, nvs.values[i]);
+    }
+}
+
+void freeNodeValues(NodeValues nvs) {
+
+}
+
